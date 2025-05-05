@@ -11,7 +11,8 @@ This project aims to develop a **predictive model to estimate the size of a wild
 
 By estimating fire size early, **emergency fire responders** can prioritize incidents that are likely to escalate, optimize deployment of firefighting units, and plan evacuation or containment strategies with greater confidence.
 
-# Data Collection - [`data_collection.ipynb`](./code/data_collection.ipynb)
+## Data Collection - 
+[`data_collection.ipynb`](./code/data_collection.ipynb)
 
 My project aims to estimate wildfire size in California using weather, geospatial, and satellite fire detection data. I began by collecting two primary datasets:
 
@@ -27,15 +28,16 @@ These two datasets were **merged on the `fire_dateonly_created` field**, which a
 The merged and cleaned dataset was saved as:
 - ✅ **`calfire_zenodo.csv`**
 
-## 🧾 Features Merged (Renamed & Retained in `calfire_zenodo.csv`)
+## 🧾 Features Merged 
+(Renamed & Retained in `calfire_zenodo.csv`)
 
 | Original Column | Renamed As             | Description |
 |------------------|-------------------------|-------------|
 | `incident_name` | `fire_name`            | Name of the fire incident |
 | `incident_dateonly_created` | `fire_dateonly_created` | Date the fire was reported |
 | `PRECIPITATION` | `precipitation`        | Daily precipitation (mm/inches) |
-| `MAX_TEMP`      | `max_temp`             | Maximum temperature (°C/°F) |
-| `MIN_TEMP`      | `min_temp`             | Minimum temperature (°C/°F) |
+| `MAX_TEMP`      | `max_temp`             | Maximum temperature (°F) |
+| `MIN_TEMP`      | `min_temp`             | Minimum temperature (°F) |
 | `AVG_WIND_SPEED`| `avg_wind_speed`       | Average wind speed (mph or km/h) |
 | `TEMP_RANGE`    | `temp_range`           | Daily temperature range |
 | `WIND_TEMP_RATIO`| `wind_temp_ratio`     | Ratio of wind speed to temperature |
@@ -65,7 +67,8 @@ However,the implementation was not fully successful.As a result, weather data wa
 
 The pipeline notebook (`fire_weather_pipieline.ipynb`) remains available for future development or debugging to enable live NOAA integration if needed.
 
-## 🔍 Data Cleaning - [`data_cleaning&EDA.ipynb`](./code/data_cleaning&EDA.ipynb)
+## 🔍 Data Cleaning 
+[`data_cleaning&EDA.ipynb`](./code/data_cleaning&EDA.ipynb)
 
 1. **Loaded Source**  
    - Dataset: `combined.csv` (merged weather, fire, and satellite data)
@@ -86,7 +89,7 @@ The pipeline notebook (`fire_weather_pipieline.ipynb`) remains available for fut
    - County names were corrected using spatial logic instead of relying on raw text.
 
 4. **Final Output**  
-   - A cleaned DataFrame (`df_cleaned_final`) containing only valid California wildfire records with accurate coordinates and verified counties.
+   - A cleaned data (`cleaned.csv`) containing only valid California wildfire records with accurate coordinates and verified counties.
 
 ## 🚫 Outliers Removed
 
@@ -105,7 +108,7 @@ These records were dropped after validating against official California county b
 
 Two types of imputation were used to handle missing values in key features:
 
-### 1. Iterative Imputation (Multivariate)
+### 1. Iterative Imputation
 - Applied to **satellite features** such as:
   - `brightness`
   - `frp`
@@ -127,16 +130,29 @@ These imputations ensured model-ready completeness while minimizing bias from de
 - Analyzed missing values across features to guide imputation or dropping.
 - Identified and documented feature distributions, outliers, and dependencies relevant to fire size.
 
-## 🧠 Models Built - [`modelling.ipynb`](./code/modelling.ipynb)
+## 🧠 Models Built - 
+[`modelling.ipynb`](./code/modelling.ipynb)
 
 Three regression models were trained on a cleaned dataset:
 
-- **Linear Regression** (baseline)
+- **Linear Regression**
 - **Random Forest Regressor**
 - **Gradient Boosting Regressor**
 - **XGBoost Regressor**
-
 The target variable `fire_acres_burned` was **log-transformed** to normalize skewed data, and later inverse-transformed for interpretability in acres.
+
+| Model                 | Test MAE (acres) |
+|-----------------------|------------------|
+| Baseline         |  135.12 |
+| Linear Regression     | 112.46 (105.03)           |
+| Ridge Regression      | 112.18          |
+| Lasso Regression      | 111.71           |
+| Random Forest         | **108.95**       |
+| XGBoost               | 114.52           |
+
+On average, my model's predictions are off by about 109 acres.
+
+## Summary
 
 Key features used include:
 
@@ -145,17 +161,90 @@ Key features used include:
 - **Satellite**: brightness, fire radiative power (FRP)
 - **Temporal**: month, season
 
-## 📈 Inference and Insights
+- **Fire Trends Over Time**: 
+  - The number of wildfires and total acres burned have increased significantly from 2000 to 2023.
+  - A clear seasonal pattern was observed: **July to September** had the highest concentration of large fires.
 
-- **Baseline (mean-based)** MAE was significantly reduced with all models.
-- **Linear Regression** achieved a test MAE of around **3434.86 acres**, showing basic patterns are detectable.
-- **Ensemble models** like XGBoost and Gradient Boosting performed better, reducing MAE further (exact MAEs available in notebook).
+- **Fire Size Distribution**:
+  - While **most fires were small (< 1000 acres)**, a few **very large fires (> 100,000 acres)** contributed to the majority of area burned.
+  - Fires larger than 1000 acres have been steadily increasing over the years.
 
-### 🔥 What this means for fire responders:
+- **Spatial Hotspots**:
+  - Counties such as **Plumas, Glenn, Siskiyou, Butte, and Shasta** consistently recorded high total acreage burned, making them geographic hotspots for large-scale fires.
 
-- **High-potential fires can be flagged early** using model predictions on the day of incident creation.
-- The absence of clear seasonal patterns indicates **real-time factors (like wind + fuel) dominate**, reinforcing the need for contextual data at incident time.
-- These predictions support **prioritizing resource allocation** to large fires that may otherwise escalate.
+- **Predictive Features**:
+  - The most important factors in predicting fire size were:
+    - **Brightness** and **Fire Radiative Power (FRP)**: Proxy indicators of fire energy and intensity.
+    - **Temperature** and **Wind Speed**: Weather conditions that affect fire spread.
+    - **Latitude and Longitude (spatial features)**: Certain regions are more prone to large fires.
+
+- **Model Performance**:
+  - A **Random Forest Regressor** was trained using environmental and spatial features.
+  - The model was evaluated using **Mean Absolute Error (MAE)** and was able to reasonably predict fire size in acres.
+  - Smaller fires were predicted with higher accuracy, while larger fires showed more variability — a natural challenge in imbalanced datasets.
+
+
+## Recommendations
+
+1. **Use the model as soon as a fire is detected**  
+   The model can give a quick estimate of how big a fire might get. This helps responders act faster and make better decisions.
+
+2. **Send more help to high-risk areas**  
+   Some counties (like Plumas and Siskiyou) often have large fires. More equipment and teams should be ready in these places.
+
+3. **Be more prepared in summer and fall**  
+   Most large fires happen between July and September. Extra resources should be available during these months.
+
+4. **Educate communities in fire-prone areas**  
+   People living in areas that often have big fires should be informed and trained on fire safety and evacuation.
+
+5. **Show predictions on a live map**  
+   Fire departments can use the model’s predictions in a map view to easily see where the biggest risks are and plan accordingly.
+
+6. **Improve the model over time**  
+   Add more data like wind, drought, and vegetation to make predictions even more accurate.
+
+
+## Why It Matters to Fire Responders
+
+- **Saves time**: Helps responders decide quickly where to go and what to do.
+- **Protects lives and property**: Knowing how big a fire might get helps keep people and firefighters safer.
+- **Uses resources better**: Teams and equipment can be sent where they’re needed most, not wasted on smaller fires.
+- **Supports teamwork**: A clear prediction helps local, state, and national teams work together more effectively.
+- **Prepares for the future**: Data and predictions help fire agencies get ready before a fire becomes a big problem.
+
+
+## California Wildfire Prediction App – Summary
+
+Built an interactive Streamlit application provides two key tools to understand and respond to wildfires in California:
+
+### 1. California Fire Viewer (2000–2023)
+- **Visualizes fire incidents** on a map for each year from 2000 to 2023.
+- Pulls data from satellite observations filtered for California.
+- Uses color-coded circle markers to indicate **fire brightness intensity**:
+  - **Blue**: Low intensity (< 330)
+  - **Orange**: Medium (330–360)
+  - **Red**: High (> 360)
+- Overlays a California state boundary for geographic context.
+- Includes a year selector slider to explore changes over time.
+
+### 2. Wildfire Size Predictor
+- Allows users to **input environmental conditions** (e.g., brightness, FRP, wind speed, temperature, location).
+- Uses a **trained minimal Random Forest model** to predict the estimated **fire size in acres**.
+- Transforms latitude and longitude into 3D Cartesian coordinates (`x`, `y`, `z`) for better spatial modeling.
+- Displays the predicted fire location and its expected severity on the map using a color-coded circle marker.
+- Categorizes predicted size as low, medium, or high intensity, with an explanatory legend.
+
+### Technical Highlights
+- Built using Python libraries: `pandas`, `numpy`, `scikit-learn`, `folium`, and `streamlit`.
+- Fire size predictions are **log-transformed** during modeling and **exponentiated** before display.
+- Geo-visualization is handled with `folium` and integrated into the Streamlit app using `streamlit-folium`.
+
+### Purpose
+This app is designed to help:
+- **Visualize historical fire trends**
+- **Predict potential fire severity based on real-time inputs**
+- **Support fire responders and planners** in resource allocation and risk awareness.
 
 # ⚠️ Risks, Limitations, and Assumptions
 
@@ -182,3 +271,30 @@ Key features used include:
 - Counties or locations **outside the training set** may yield poor predictions due to lack of representativeness.
 - **Imputation or removal of invalid coordinates** may introduce bias or lead to loss of important edge cases.
 - **Temporal drift**: the conditions influencing fire size may evolve over years (e.g., drought, development), but the model assumes feature relationships remain stable.
+
+## 🔮 Future Work and Enhancements
+
+- **Incorporate vegetation and fuel data** (e.g., vegetation type, fuel moisture from remote sensing or USDA databases) to better model fire spread potential.
+- **Integrate elevation and topography** using DEM (Digital Elevation Models) to understand terrain-driven fire behavior.
+- Fix and implement the **NOAA API** pipeline for dynamic weather data retrieval at fire locations.
+- Use **live feeds from FIRMS** to enable real-time prediction or alerting tools.
+- Improve **time-series modeling** (e.g., ARIMA, Prophet) to forecast fire activity trends based on seasonality and climate conditions.
+- Overlay fire prediction results on **ArcGIS maps** with county boundaries, population density, or critical infrastructure.
+
+## 📚 Data and Reference Sources
+
+- [Zenodo Wildfire & Weather Dataset (NOAA & CAL FIRE combined)](https://zenodo.org/records/14712845)
+- [CAL FIRE Official Incident Archive](https://www.fire.ca.gov/incidents)
+- [NASA FIRMS - Fire Information for Resource Management System](https://firms.modaps.eosdis.nasa.gov/country/)
+- [MODIS Satellite Fire Detection Data](https://firms.modaps.eosdis.nasa.gov/download/)
+- [NOAA Climate Data Online (CDO) API Documentation](https://www.ncdc.noaa.gov/cdo-web/webservices/v2)
+- [California County GeoJSON Boundaries (via public shapefiles)](https://data.ca.gov/dataset/ca-geographic-boundaries)
+- [California Counties GIS Boundary](https://www.california-demographics.com/counties_map)
+
+## Acknowledgments
+
+I would like to extend my heartfelt thanks to the following people that made this project possible:
+
+- **Matt Brems** – for your invaluable insights, especially around data preprocessing and spatial transformations. Your feedback helped refine the approach and improve the quality of the analysis.
+- **Andranique Green** – for sharing the `zenodo.csv` dataset.
+- **ChatGPT by OpenAI** – This incredible tool was used for answering many questions when I was stuck.
