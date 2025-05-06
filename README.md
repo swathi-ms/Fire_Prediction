@@ -291,11 +291,4 @@ This app is designed to help:
 - [California County GeoJSON Boundaries (via public shapefiles)](https://data.ca.gov/dataset/ca-geographic-boundaries)
 - [California Counties GIS Boundary](https://www.california-demographics.com/counties_map)
 
-## Acknowledgments
-
-I would like to extend my heartfelt thanks to the following people that made this project possible:
-
-- **Matt Brems** – for your invaluable insights, especially around preprocessing and spatial transformations. Your feedback helped refine the approach and improve the quality of the analysis.
-- **Eric Bayless** – for your helpful feedback and suggestions, particularly regarding the use of satellite data sources, which strengthened the scope and direction of the project.
-- **Andranique Green** – for sharing the `zenodo.csv` dataset.
-- **ChatGPT by OpenAI** – This incredible tool was used for answering many questions when I was stuck.
+## 
